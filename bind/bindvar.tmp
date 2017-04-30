@@ -1,0 +1,2 @@
+binddir=/home/projecthunter/DHCP/dhcp-4.3.5/bind
+GMAKE=make
