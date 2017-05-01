@@ -248,7 +248,7 @@ BINDDIR = ${top_srcdir}/bind
 BINDSRCDIR = ${top_srcdir}/bind
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include
+CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include -L/usr/lib/mysql
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo

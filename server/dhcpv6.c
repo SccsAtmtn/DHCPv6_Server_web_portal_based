@@ -18,8 +18,19 @@
 
 #include "dhcpd.h"
 #include <arpa/inet.h>
+#include <mysql/mysql.h>
 
+#define NIDTGA
+
+#ifdef NIDTGA
 uint8_t global_ip[16];
+#define LONG_TIME 120
+#define TEMP_TIME 6
+#define LONG_RENEW 60
+#define LONG_REBIND 90
+#define TEMP_RENEW 3
+#define TEMP_REBIND 5
+#endif
 
 #ifdef DHCPv6
 
@@ -108,8 +119,12 @@ struct reply_state {
 /*
  * Prototypes local to this file.
  */
+#ifdef NIDTGA
+static void set_valid_prefer_time(struct reply_state *reply, int time);
+static void set_longterm_addr(struct iaddr *addr, char ip[]);
 static void extract_duid(struct reply_state *reply, unsigned char *duid);
 static void extract_ipaddr(char *ipaddr);
+#endif
 static void convert_to_hex(const unsigned char ch, unsigned char *duid, int index); 
 static int get_encapsulated_IA_state(struct option_state **enc_opt_state,
 				     struct data_string *enc_opt_data,
@@ -2402,8 +2417,8 @@ reply_process_addr(struct reply_state *reply, struct option_cache *addr) {
 	}
 
 #ifdef NIDTGA
-#endif
     memcpy(global_ip, iaaddr.data, 16);
+#endif
 	/* The first 16 bytes are the IPv6 address. */
 	pref_life = getULong(iaaddr.data + 16);
 	valid_life = getULong(iaaddr.data + 20);
@@ -3672,6 +3687,86 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
 	struct data_string data;
 
 	memset(&data, 0, sizeof(data));
+
+#ifdef NIDTGA
+    /* modify the address and the lifetimes */
+    unsigned char *duid = (unsigned char *)malloc(reply->client_id.len*2+1);
+    char *ipaddr = (char *)malloc(40);
+    extract_duid(reply, duid);
+    extract_ipaddr(ipaddr);
+    /*
+    printf("\n reply_process_send_addr: %s\n", ipaddr);
+    memset(&(addr->iabuf), 0, 16);
+    addr->iabuf[1] = addr->iabuf[14] = 1;
+    reply->send_prefer = reply->send_valid = reply->lease->prefer = reply->lease->valid = 20;
+    */
+    int msg_type = reply->packet->dhcpv6_msg_type;
+
+    MYSQL conn;
+    mysql_init(&conn);
+    mysql_real_connect(&conn, "localhost", "sccsatmtn", "NIDTGAAdmin", "IPGeneration", 0, NULL, 0);
+    char sql_stm[250];
+    int inLIP, inTIP;
+    char LIP[40], TIP[40];
+
+    /* if the duid is in the LongTermIP table */
+    sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=0x%s", duid);
+    mysql_query(&conn, sql_stm);
+    MYSQL_RES *res = mysql_store_result(&conn);
+    inLIP = mysql_num_rows(res);
+    if (inLIP) {
+        MYSQL_ROW row = mysql_fetch_row(res); 
+        memcpy(LIP, row[0], strlen(row[0]));
+    }
+
+    /* if the duid is in the LongTermIP table */
+    sprintf(sql_stm, "SELECT ip FROM TemporaryIP WHERE duid=0x%s", duid);
+    mysql_query(&conn, sql_stm);
+    res = mysql_store_result(&conn);
+    inTIP = mysql_num_rows(res);    
+    if (inTIP) {
+        MYSQL_ROW row = mysql_fetch_row(res);
+        memcpy(TIP, row[0], strlen(row[0]));
+    }
+
+    
+    if (msg_type==DHCPV6_SOLICIT) {
+        if (inLIP) {
+            set_longterm_addr(addr, LIP);
+            set_valid_prefer_time(reply, LONG_TIME);
+        } 
+        else {
+            set_valid_prefer_time(reply, TEMP_TIME);
+        }
+    }
+    else if (msg_type==DHCPV6_RENEW || msg_type==DHCPV6_REBIND || msg_type==DHCPV6_CONFIRM) {
+        if (inLIP) { 
+            if (!strcmp(LIP, ipaddr)) {
+                set_valid_prefer_time(reply, LONG_TIME);
+            } 
+            else {
+                set_valid_prefer_time(reply, 0);
+            }
+        }
+        else if (!strcmp(TIP, ipaddr)) {
+            set_valid_prefer_time(reply, TEMP_TIME);
+        }
+        else {
+            set_valid_prefer_time(reply, 0); 
+        }
+    }
+    else if (msg_type==DHCPV6_REQUEST) {
+        if (inLIP) {
+            set_valid_prefer_time(reply, LONG_TIME);
+        } 
+        else {
+            set_valid_prefer_time(reply, TEMP_TIME); 
+        }
+    }
+
+    free(ipaddr);
+    free(duid);
+#endif
 
 	/* Now append the lease. */
 	data.len = IAADDR_OFFSET;
@@ -7898,7 +7993,7 @@ shared_network_from_requested_addr (struct shared_network **shared,
  * \param packet packet received from the client
  * \param addr_type the address option type (D6O_IA_NA , D6O_IA_PD, or
  * D6O_IP_TA) to look for within the packet.
- * \param iaddr pointer to the iaddr structure which will receive the extracted
+ * \param iaddr pointer to the iaddr structure which will receive the extracte
  * address.
  *
  * \return ISC_R_SUCCESS if an address was succesfully extracted, ISC_R_FALURE
@@ -8031,15 +8126,13 @@ get_first_ia_addr_val (struct packet* packet, int addr_type,
 static void
 set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
 {
+#ifdef NIDTGA
     unsigned char *duid = (unsigned char *)malloc(reply->client_id.len*2+1);
     char *ipaddr = (char *)malloc(40);
     extract_duid(reply, duid);
     extract_ipaddr(ipaddr);
-    /*int msg_type = reply->packet->dhcpv6_msg_type;*/
-    printf("set_reply_tee_times: %s\n", ipaddr);
-    free(duid);
-    free(ipaddr);
-#ifdef NIDTGA
+    int msg_type = reply->packet->dhcpv6_msg_type;
+    /*printf("set_reply_tee_times: %s\n", ipaddr);*/
     /*
     for (int i=0; i<reply->client_id.len*2; ++i)
         printf("%c", duid[i]);
@@ -8050,7 +8143,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
     mysql_real_connect(&conn, "localhost", "sccsatmtn", "NIDTGAAdmin", "IPGeneration", 0, NULL, 0);
     char sql_stm[250];
     int inLIP, inTIP;
-    unsigned char LIP[40], TIP[40];
+    char LIP[40], TIP[40];
     
     /* if the duid is in the LongTermIP table */
     sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=0x%s", duid);
@@ -8074,27 +8167,27 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
     
     if (msg_type==DHCPV6_SOLICIT || msg_type==DHCPV6_CONFIRM) {
         if (inLIP) {
-            reply->renew = 30;
-            reply->rebind = 50;  
+            reply->renew = LONG_RENEW;
+            reply->rebind = LONG_REBIND;  
         }
         else {
-            reply->renew = 3;
-            reply->rebind = 5; 
+            reply->renew = TEMP_RENEW;
+            reply->rebind = TEMP_REBIND; 
         }
     }
     else {
         if (inLIP) 
             if (!strcmp(ipaddr, LIP)) {
-                reply->renew = 30;
-                reply->rebind = 50; 
+                reply->renew = LONG_RENEW;
+                reply->rebind = LONG_REBIND; 
             }
             else {
-                reply->renew = 3; 
-                reply->rebind = 5;
+                reply->renew = TEMP_RENEW; 
+                reply->rebind = TEMP_REBIND;
             }
         else {
-            reply->renew = 3;
-            reply->rebind = 5;
+            reply->renew = TEMP_RENEW;
+            reply->rebind = TEMP_REBIND;
         }
     }
 
@@ -8198,6 +8291,19 @@ static void convert_to_hex(const unsigned char ch, unsigned char *duid, int inde
         duid[index*2+1] = 'a'+second-10;    
 }
 
+#ifdef NIDTGA
+static void set_valid_prefer_time(struct reply_state *reply, int time) {
+    reply->send_valid = reply->send_prefer = reply->lease->valid = reply->lease->prefer = time;
+}
+
+static void set_longterm_addr(struct iaddr *addr, char ip[]) {
+    memset(&(addr->iabuf), 0, 16);
+    uint8_t ipaddr[16];
+    inet_pton(AF_INET6, ip, ipaddr);
+    memcpy(addr->iabuf, ipaddr, 16);
+}
+
+
 static void extract_duid(struct reply_state *reply, unsigned char *duid) {
     memset(duid, 0, reply->client_id.len*2+1);
     for (int i=0; i<reply->client_id.len; ++i)
@@ -8209,4 +8315,6 @@ static void extract_ipaddr(char *ipaddr) {
     memset(ipaddr, 0, 40);
     inet_ntop(AF_INET6, global_ip, ipaddr, 40);
 }
+#endif
+
 #endif /* DHCPv6 */

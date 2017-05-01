@@ -272,7 +272,7 @@ BINDDIR = ${top_srcdir}/bind
 BINDSRCDIR = ${top_srcdir}/bind
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include
+CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include -L/usr/lib/mysql/ 
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -465,7 +465,7 @@ clean-sbinPROGRAMS:
 
 dhcpd$(EXEEXT): $(dhcpd_OBJECTS) $(dhcpd_DEPENDENCIES) $(EXTRA_dhcpd_DEPENDENCIES) 
 	@rm -f dhcpd$(EXEEXT)
-	$(AM_V_CCLD)$(dhcpd_LINK) $(dhcpd_OBJECTS) $(dhcpd_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(dhcpd_LINK) $(dhcpd_OBJECTS) $(dhcpd_LDADD) $(LIBS) -lmysqlclient
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -690,7 +690,7 @@ dhcpd-dhcpleasequery.obj: dhcpleasequery.c
 #	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -c -o dhcpd-dhcpleasequery.obj `if test -f 'dhcpleasequery.c'; then $(CYGPATH_W) 'dhcpleasequery.c'; else $(CYGPATH_W) '$(srcdir)/dhcpleasequery.c'; fi`
 
 dhcpd-dhcpv6.o: dhcpv6.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -MT dhcpd-dhcpv6.o -MD -MP -MF $(DEPDIR)/dhcpd-dhcpv6.Tpo -c -o dhcpd-dhcpv6.o `test -f 'dhcpv6.c' || echo '$(srcdir)/'`dhcpv6.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -MT dhcpd-dhcpv6.o -MD -MP -MF $(DEPDIR)/dhcpd-dhcpv6.Tpo -c -o dhcpd-dhcpv6.o `test -f 'dhcpv6.c' || echo '$(srcdir)/'`dhcpv6.c -lmysqlclient
 	$(AM_V_at)$(am__mv) $(DEPDIR)/dhcpd-dhcpv6.Tpo $(DEPDIR)/dhcpd-dhcpv6.Po
 #	$(AM_V_CC)source='dhcpv6.c' object='dhcpd-dhcpv6.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
