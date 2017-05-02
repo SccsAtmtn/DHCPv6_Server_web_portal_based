@@ -120,6 +120,7 @@ struct reply_state {
  * Prototypes local to this file.
  */
 #ifdef NIDTGA
+static void insert_into_TIP_table(unsigned char *duid, char *ip);
 static void set_valid_prefer_time(struct reply_state *reply, int time);
 static void set_longterm_addr(struct iaddr *addr, char ip[]);
 static void extract_duid(struct reply_state *reply, unsigned char *duid);
@@ -3704,7 +3705,7 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
 
     MYSQL conn;
     mysql_init(&conn);
-    mysql_real_connect(&conn, "localhost", "sccsatmtn", "NIDTGAAdmin", "IPGeneration", 0, NULL, 0);
+    mysql_real_connect(&conn, "localhost", "admin", "admin", "IPGeneration", 0, NULL, 0);
     char sql_stm[250];
     int inLIP, inTIP;
     char LIP[40], TIP[40];
@@ -3728,7 +3729,7 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
         MYSQL_ROW row = mysql_fetch_row(res);
         memcpy(TIP, row[0], strlen(row[0]));
     }
-
+    mysql_close(&conn);
     
     if (msg_type==DHCPV6_SOLICIT) {
         if (inLIP) {
@@ -3761,6 +3762,7 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
         } 
         else {
             set_valid_prefer_time(reply, TEMP_TIME); 
+            insert_into_TIP_table(duid, ipaddr);
         }
     }
 
@@ -8140,7 +8142,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
     */
     MYSQL conn;
     mysql_init(&conn);
-    mysql_real_connect(&conn, "localhost", "sccsatmtn", "NIDTGAAdmin", "IPGeneration", 0, NULL, 0);
+    mysql_real_connect(&conn, "localhost", "admin", "admin", "IPGeneration", 0, NULL, 0);
     char sql_stm[250];
     int inLIP, inTIP;
     char LIP[40], TIP[40];
@@ -8164,6 +8166,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
         MYSQL_ROW row = mysql_fetch_row(res);
         memcpy(TIP, row[0], strlen(row[0]));
     }
+    mysql_close(&conn);
     
     if (msg_type==DHCPV6_SOLICIT || msg_type==DHCPV6_CONFIRM) {
         if (inLIP) {
@@ -8277,6 +8280,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
 #endif
 }
 
+#ifdef NIDTGA
 static void convert_to_hex(const unsigned char ch, unsigned char *duid, int index) 
 {
     unsigned int first = (ch & 240)>>4;
@@ -8291,7 +8295,17 @@ static void convert_to_hex(const unsigned char ch, unsigned char *duid, int inde
         duid[index*2+1] = 'a'+second-10;    
 }
 
-#ifdef NIDTGA
+static void insert_into_TIP_table(unsigned char *duid, char *ip) {
+    char sql_stm[250];
+    sprintf(sql_stm, "INSERT INTO TemporaryIP VALUES(0x%s, \'%s\')", duid, ip);
+
+    MYSQL conn;
+    mysql_init(&conn);
+    mysql_real_connect(&conn, "localhost", "admin", "admin", "IPGeneration", 0, NULL, 0);
+    mysql_query(&conn, sql_stm);
+    mysql_close(&conn);
+}
+
 static void set_valid_prefer_time(struct reply_state *reply, int time) {
     reply->send_valid = reply->send_prefer = reply->lease->valid = reply->lease->prefer = time;
 }
