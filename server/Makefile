@@ -256,23 +256,23 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = /usr/bin/ar
 ATF_BIN = 
 ATF_CFLAGS = 
 ATF_LDFLAGS = 
-AUTOCONF = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/missing autoconf
-AUTOHEADER = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/missing autoheader
-AUTOMAKE = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/missing automake-1.15
+AUTOCONF = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/missing autoconf
+AUTOHEADER = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/missing autoheader
+AUTOMAKE = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/missing automake-1.15
 AWK = mawk
 BINDCONFIG =  --with-randomdev=/dev/random
 BINDDIR = ${top_srcdir}/bind
 BINDSRCDIR = ${top_srcdir}/bind
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include -L/usr/lib/mysql/ 
+CFLAGS = -g -O2  -Wall -Werror -fno-strict-aliasing -I$(top_srcdir)/includes -I${top_srcdir}/bind/include
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -297,7 +297,7 @@ LIBOBJS =
 LIBS = 
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/missing makeinfo
+MAKEINFO = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/missing makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = dhcp
@@ -313,10 +313,10 @@ SET_MAKE =
 SHELL = /bin/bash
 STRIP = 
 VERSION = 4.3.5
-abs_builddir = /home/projecthunter/DHCP/dhcp-4.3.5/server
-abs_srcdir = /home/projecthunter/DHCP/dhcp-4.3.5/server
-abs_top_builddir = /home/projecthunter/DHCP/dhcp-4.3.5
-abs_top_srcdir = /home/projecthunter/DHCP/dhcp-4.3.5
+abs_builddir = /home/sccsatmtn/ISC_DHCP_for_NIDTGA/server
+abs_srcdir = /home/sccsatmtn/ISC_DHCP_for_NIDTGA/server
+abs_top_builddir = /home/sccsatmtn/ISC_DHCP_for_NIDTGA
+abs_top_srcdir = /home/sccsatmtn/ISC_DHCP_for_NIDTGA
 ac_ct_CC = gcc
 ac_prefix_program = 
 am__include = include
@@ -345,7 +345,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/projecthunter/DHCP/dhcp-4.3.5/install-sh
+install_sh = ${SHELL} /home/sccsatmtn/ISC_DHCP_for_NIDTGA/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -690,7 +690,7 @@ dhcpd-dhcpleasequery.obj: dhcpleasequery.c
 #	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -c -o dhcpd-dhcpleasequery.obj `if test -f 'dhcpleasequery.c'; then $(CYGPATH_W) 'dhcpleasequery.c'; else $(CYGPATH_W) '$(srcdir)/dhcpleasequery.c'; fi`
 
 dhcpd-dhcpv6.o: dhcpv6.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -MT dhcpd-dhcpv6.o -MD -MP -MF $(DEPDIR)/dhcpd-dhcpv6.Tpo -c -o dhcpd-dhcpv6.o `test -f 'dhcpv6.c' || echo '$(srcdir)/'`dhcpv6.c -lmysqlclient
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dhcpd_CFLAGS) $(CFLAGS) -MT dhcpd-dhcpv6.o -MD -MP -MF $(DEPDIR)/dhcpd-dhcpv6.Tpo -c -o dhcpd-dhcpv6.o `test -f 'dhcpv6.c' || echo '$(srcdir)/'`dhcpv6.c
 	$(AM_V_at)$(am__mv) $(DEPDIR)/dhcpd-dhcpv6.Tpo $(DEPDIR)/dhcpd-dhcpv6.Po
 #	$(AM_V_CC)source='dhcpv6.c' object='dhcpd-dhcpv6.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \

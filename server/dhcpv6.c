@@ -125,8 +125,8 @@ static void set_valid_prefer_time(struct reply_state *reply, int time);
 static void set_longterm_addr(struct iaddr *addr, char ip[]);
 static void extract_duid(struct reply_state *reply, unsigned char *duid);
 static void extract_ipaddr(char *ipaddr);
-#endif
 static void convert_to_hex(const unsigned char ch, unsigned char *duid, int index); 
+#endif
 static int get_encapsulated_IA_state(struct option_state **enc_opt_state,
 				     struct data_string *enc_opt_data,
 				     struct packet *packet,
@@ -2842,7 +2842,6 @@ reply_process_ia_ta(struct reply_state *reply, struct option_cache *ia) {
 #ifdef NIDTGA
         memcpy(global_ip, iaaddr.data, 16);
 #endif
-        memcpy(global_ip, iaaddr.data, 16);
 		pref_life = getULong(iaaddr.data + 16);
 		valid_life = getULong(iaaddr.data + 20);
 
@@ -3606,6 +3605,7 @@ reply_process_is_addressed(struct reply_state *reply,
     /* Perform dynamic lease related update work. */
     if (reply->lease != NULL) {
         /* Cached lifetimes */
+        /*
         unsigned char *duid = (unsigned char *)malloc(reply->client_id.len*2);
         for (int i=0; i<reply->client_id.len; ++i)
             convert_to_hex(reply->client_id.data[i], duid, i);
@@ -3613,6 +3613,7 @@ reply_process_is_addressed(struct reply_state *reply,
             printf("%c", duid[i]);
         printf("\n");
         free(duid);
+        */
 
         /*reply->send_prefer = reply->send_valid = 15;*/
 		reply->lease->prefer = reply->send_prefer;
@@ -3711,7 +3712,7 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
     char LIP[40], TIP[40];
 
     /* if the duid is in the LongTermIP table */
-    sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=0x%s", duid);
+    sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=\'%s\'", duid);
     mysql_query(&conn, sql_stm);
     MYSQL_RES *res = mysql_store_result(&conn);
     inLIP = mysql_num_rows(res);
@@ -3721,7 +3722,7 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
     }
 
     /* if the duid is in the LongTermIP table */
-    sprintf(sql_stm, "SELECT ip FROM TemporaryIP WHERE duid=0x%s", duid);
+    sprintf(sql_stm, "SELECT ip FROM TemporaryIP WHERE duid=\'%s\'", duid);
     mysql_query(&conn, sql_stm);
     res = mysql_store_result(&conn);
     inTIP = mysql_num_rows(res);    
@@ -3758,10 +3759,14 @@ reply_process_send_addr(struct reply_state *reply, struct iaddr *addr) {
     }
     else if (msg_type==DHCPV6_REQUEST) {
         if (inLIP) {
+            set_longterm_addr(addr, LIP);
             set_valid_prefer_time(reply, LONG_TIME);
         } 
         else {
             set_valid_prefer_time(reply, TEMP_TIME); 
+            uint8_t sendAddr[16];
+            memcpy(sendAddr, addr->iabuf, 16);
+            inet_ntop(AF_INET6, sendAddr, ipaddr, 40); 
             insert_into_TIP_table(duid, ipaddr);
         }
     }
@@ -8148,7 +8153,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
     char LIP[40], TIP[40];
     
     /* if the duid is in the LongTermIP table */
-    sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=0x%s", duid);
+    sprintf(sql_stm, "SELECT ip FROM LongTermIP WHERE duid=\'%s\'", duid);
     mysql_query(&conn, sql_stm);
     MYSQL_RES *res = mysql_store_result(&conn);
     inLIP = mysql_num_rows(res);
@@ -8158,7 +8163,7 @@ set_reply_tee_times(struct reply_state* reply, unsigned ia_cursor)
     }
 
     /* if the duid is in the LongTermIP table */
-    sprintf(sql_stm, "SELECT ip FROM TemporaryIP WHERE duid=0x%s", duid);
+    sprintf(sql_stm, "SELECT ip FROM TemporaryIP WHERE duid=\'%s\'", duid);
     mysql_query(&conn, sql_stm);
     res = mysql_store_result(&conn);
     inTIP = mysql_num_rows(res);    
@@ -8297,7 +8302,7 @@ static void convert_to_hex(const unsigned char ch, unsigned char *duid, int inde
 
 static void insert_into_TIP_table(unsigned char *duid, char *ip) {
     char sql_stm[250];
-    sprintf(sql_stm, "INSERT INTO TemporaryIP VALUES(0x%s, \'%s\')", duid, ip);
+    sprintf(sql_stm, "INSERT INTO TemporaryIP VALUES(\'%s\', \'%s\')", duid, ip);
 
     MYSQL conn;
     mysql_init(&conn);

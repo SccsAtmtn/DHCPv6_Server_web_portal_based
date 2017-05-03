@@ -1,2 +1,2 @@
-binddir=/home/projecthunter/DHCP/dhcp-4.3.5/bind
+binddir=/home/sccsatmtn/ISC_DHCP_for_NIDTGA/bind
 GMAKE=make
